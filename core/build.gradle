@@ -1,0 +1,54 @@
+plugins {
+    id 'java-library'
+}
+
+repositories {
+    mavenCentral()
+}
+
+def libDir = "${projectDir}/libs"
+def moddingDir = "${buildDir}/libs"
+
+ext {
+    mappings = file('libs/mappings.tiny')
+}
+
+dependencies {
+    compileOnly files("${moddingDir}/game-lib_preprocessed.jar")
+    compileOnly project(':')
+}
+
+task prepareModdingDir {
+    doLast {
+        file(libDir).mkdirs()
+        file(moddingDir).mkdirs()
+    }
+}
+
+task remap(type: JavaExec) {
+    def input = "$libDir/1.6.4-MITE.jar"
+    def output = "$moddingDir/game-lib_remapped.jar"
+    doFirst {
+        file(output).delete()
+    }
+    inputs.file input
+    inputs.file mappings
+    outputs.file output
+    main = 'net.fabricmc.tinyremapper.Main'
+    classpath = project(":").sourceSets.main.runtimeClasspath
+    args input, output, mappings.absolutePath, 'intermediary', 'named'
+
+}
+
+task preprocess(type: JavaExec) {
+    mustRunAfter remap
+    def input = "$moddingDir/game-lib_remapped.jar"
+    def output = "$moddingDir/game-lib_preprocessed.jar"
+    inputs.file input
+    outputs.file output
+    main = 'cn.tesseract.union.Preprocessor'
+    classpath = project(":").sourceSets.main.runtimeClasspath
+    args input, output, 'desktop'
+}
+
+compileJava.dependsOn prepareModdingDir, remap, preprocess

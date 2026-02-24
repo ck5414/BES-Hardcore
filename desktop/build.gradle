@@ -1,0 +1,53 @@
+plugins {
+    id 'java'
+    id 'com.gradleup.shadow' version '8.3.5'
+}
+
+repositories {
+    mavenCentral()
+}
+
+def runDir = "${projectDir}/run"
+
+dependencies {
+    implementation files("${project(':core').buildDir}/libs/game-lib_preprocessed.jar")
+    implementation fileTree(dir: "libs", include: ['*.jar'])
+    implementation project(":core")
+    compileOnly project(":")
+    compileOnly fileTree(dir: "$runDir/libs", include: ['*.jar'])
+}
+
+shadowJar {
+    archiveFileName = 'game-lib_all.jar'
+
+}
+
+jar {
+    manifest {
+        attributes('Main-Class': 'cn.tesseract.bes.Main')
+    }
+}
+
+task asmTransform(type: JavaExec) {
+    mustRunAfter shadowJar
+    def input = "${buildDir}/libs/${shadowJar.archiveFileName.get()}"
+    def output = "$runDir/BES.jar"
+    inputs.file input
+    outputs.file output
+    main = 'cn.tesseract.union.AsmTransformer'
+    classpath = files(project(":").sourceSets.main.runtimeClasspath, file(input))
+    args input, output, 'desktop'
+}
+
+task modJar {
+    dependsOn shadowJar, asmTransform
+}
+
+task modAndRun(type: Exec) {
+    dependsOn modJar
+
+    doFirst {
+        commandLine "java", '-jar', "BES.jar"
+        workingDir = file(runDir)
+    }
+}
