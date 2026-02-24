@@ -84,6 +84,12 @@ public class BEServer extends MinecraftServer {
 
     public final void tick() {
         super.tick();
+        if (this.tickCounter % 1000 == 0) {
+            getConfigurationManager().loadWhiteList();
+            if (getConfigurationManager().getCurrentPlayerCount() == 0) {
+                System.gc();
+            }
+        }
     }
 
     public final void ab() {
@@ -93,7 +99,6 @@ public class BEServer extends MinecraftServer {
             this.a(false);
             Xe.a(this);
         }
-
     }
 
     public final boolean canStructuresSpawn() {
@@ -164,7 +169,6 @@ public class BEServer extends MinecraftServer {
             this.lanServerPing.interrupt();
             this.lanServerPing = null;
         }
-
     }
 
     public final void initiateShutdown() {

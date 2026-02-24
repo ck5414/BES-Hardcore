@@ -12,6 +12,10 @@ public class FixHook {
         return Main.dummyMc;
     }
 
+    public static Minecraft nullMinecraft() {
+        return null;
+    }
+
     @Hook
     public static void a(agq c, Achievement achievement, EntityPlayer entityPlayer) {
         if (!c.b.a(achievement) || !entityPlayer.username.equals(c.b.K.get(achievement).a))

@@ -6,6 +6,7 @@ import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.FieldNode;
+import org.objectweb.asm.tree.MethodInsnNode;
 import org.objectweb.asm.tree.MethodNode;
 
 import java.io.FileOutputStream;
@@ -46,6 +47,20 @@ public class Preprocessor {
             constructor.visitInsn(Opcodes.RETURN);
             constructor.visitEnd();
             classNode.methods.add(constructor);
+        });
+
+        registerNodeTransformer("net.minecraft.World", classNode -> {
+            classNode.methods.forEach(method -> {
+                Arrays.stream(method.instructions.toArray()).forEach(insn -> {
+                    if (insn.getOpcode() == Opcodes.INVOKESTATIC) {
+                        MethodInsnNode methodInsn = (MethodInsnNode) insn;
+                        if (methodInsn.owner.equals("net/minecraft/Minecraft") && methodInsn.name.equals("getMinecraft")) {
+                            methodInsn.owner = "cn/tesseract/bes/hook/FixHook";
+                            methodInsn.name = "nullMinecraft";
+                        }
+                    }
+                });
+            });
         });
     }
 
