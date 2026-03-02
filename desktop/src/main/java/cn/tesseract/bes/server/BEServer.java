@@ -68,7 +68,7 @@ public class BEServer extends MinecraftServer {
     }
 
     public final boolean startServer() {
-        this.F.a("Starting integrated minecraft server version 1.6.4", new Object[0]);
+        this.F.a("Starting not a integrated minecraft server version 1.6.4", new Object[0]);
         this.d(false);
         this.e(true);
         this.f(true);
