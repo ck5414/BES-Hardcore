@@ -1,4 +1,5 @@
 desktop/run/
+builds/
 android/libs/apktool_out/
 
 .gradle
