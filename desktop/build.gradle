@@ -8,6 +8,7 @@ repositories {
 }
 
 def runDir = "${projectDir}/run"
+def buildsDir = "${rootProject.projectDir}/builds"
 
 dependencies {
     implementation files("${project(':core').buildDir}/libs/game-lib_preprocessed.jar")
@@ -31,7 +32,10 @@ jar {
 task asmTransform(type: JavaExec) {
     mustRunAfter shadowJar
     def input = "${buildDir}/libs/${shadowJar.archiveFileName.get()}"
-    def output = "$runDir/BES.jar"
+    def output = "$buildsDir/BES.jar"
+    doFirst {
+        file(buildsDir).mkdirs()
+    }
     inputs.file input
     outputs.file output
     main = 'cn.tesseract.union.AsmTransformer'
