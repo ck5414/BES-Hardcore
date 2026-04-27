@@ -9,6 +9,8 @@ public class ServerConfig {
     public long seed = new Random().nextLong();
     public String motd = "打破一切！服务器官方群：1085649633";
     public ArrayList<String> ops = new ArrayList<>();
+    public boolean hardcore = false;
+    public boolean worldReset = false;
 
     public void normalize() {
         if (port < 1 || port > 65535) {

@@ -1,1 +1,2 @@
 cn.tesseract.bes.hook.FixHook
+cn.tesseract.bes.hook.HardcoreHook

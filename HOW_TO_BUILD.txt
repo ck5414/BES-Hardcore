@@ -1,0 +1,95 @@
+============================
+  HOW TO BUILD BES-Hardcore
+============================
+
+Prerequisites
+-------------
+  - Java JDK 17 or newer   (verify with: java -version)
+  - Internet access to Maven Central (repo1.maven.org)
+  - The file  core/libs/1.6.4-MITE.jar   must be present  (the original game JAR)
+  - The file  core/libs/mappings.tiny     must be present  (name mappings)
+
+The  desktop/libs/  directory must contain the server-side library JARs
+(argo, bcprov, commons-io, commons-lang3, fastutil, gson, guava, jopt-simple, lwjgl).
+All of these are already committed to the repository.
+
+NOTE: maven.fabricmc.net is NOT required. The project uses a built-in TinyRemapper
+implemented with ASM (src/main/java/cn/tesseract/union/TinyRemapper.java) instead of
+the original net.fabricmc:tiny-remapper dependency.
+
+
+Build steps
+-----------
+1. Make the Gradle wrapper executable (Linux/macOS only):
+       chmod +x gradlew
+
+2. Run the full build pipeline:
+       ./gradlew :desktop:modJar       (Linux/macOS)
+       gradlew.bat :desktop:modJar     (Windows)
+
+   What happens under the hood:
+     a. Compiles the root-project build tools (TinyRemapper, AsmTransformer, Preprocessor).
+     b. core:remap      – remaps 1.6.4-MITE.jar from obfuscated names to human-readable
+                          names using the bundled mappings.tiny (TinyV1 format).
+     c. core:preprocess – opens all access modifiers, adds a no-arg constructor to
+                          Minecraft, and patches World.getMinecraft() calls.
+     d. Compiles the server mod source code against the preprocessed game JAR.
+     e. desktop:shadowJar  – bundles everything (game + mod + libraries) into one fat JAR.
+     f. desktop:asmTransform – injects hook bytecode (FixHook, HardcoreHook) into the
+                               relevant game classes using the hook.txt manifest.
+
+3. The finished server is written to:
+       desktop/run/BES.jar
+
+   (desktop/run/ is git-ignored — the JAR is a build artifact, not committed to source.)
+
+
+Running the server
+------------------
+1. Copy  desktop/run/BES.jar  to an empty folder (your server directory).
+2. Start it:
+       java -jar BES.jar
+3. On first launch a  config.json  is created next to the JAR with defaults:
+       {
+         "ip": "127.0.0.1",
+         "port": 25565,
+         "seed": <random>,
+         "motd": "...",
+         "ops": [],
+         "hardcore": false,
+         "worldReset": false
+       }
+4. Edit config.json as needed, then restart the server.
+
+
+Hardcore & World-Reset options
+-------------------------------
+  "hardcore": true
+       Enables Minecraft's built-in hardcore mode for the world.
+       Players cannot respawn after death.
+
+  "worldReset": true   (requires "hardcore": true)
+       When any player dies, the server:
+         1. Broadcasts a countdown message to all connected players.
+         2. Waits 5 seconds.
+         3. Deletes the entire "world" folder.
+         4. Exits with code 0.
+       On the next launch, a fresh world is generated using the same seed
+       stored in config.json, effectively "resetting" the world.
+       Run the server inside a restart loop (e.g. a bash while-loop or
+       a systemd service with Restart=always) so it comes back automatically.
+
+
+Troubleshooting
+---------------
+  Q: Build fails with "Could not resolve net.fabricmc:tiny-remapper"
+  A: This should no longer happen. If it does, verify you are on the
+     correct branch and that build.gradle does NOT list maven.fabricmc.net.
+
+  Q: "Input jar not found" during :core:remap
+  A: Ensure core/libs/1.6.4-MITE.jar exists. It is not redistributed;
+     obtain it from the MITE mod distribution.
+
+  Q: "game-lib_preprocessed.jar not found" during :desktop:compileJava
+  A: Run  ./gradlew :core:remap :core:preprocess  before building the desktop module.
+     The full  :desktop:modJar  target handles this ordering automatically.
