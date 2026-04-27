@@ -33,7 +33,7 @@ public class BEServer extends MinecraftServer {
         this.canCreateBonusChest(false);
         this.setBuildLimit(256);
         this.setConfigurationManager(new BESPlayerList(this));
-        this.theWorldSettings = new agD(seed, EnumGameType.SURVIVAL, true, false, WorldType.parseWorldType("largeBiomes"), false);
+        this.theWorldSettings = new agD(seed, EnumGameType.SURVIVAL, true, Main.config.hardcore, WorldType.parseWorldType("largeBiomes"), false);
         try {
             this.theServerListeningThread = new BESListenThread(this, InetAddress.getByName(ip), port);
         } catch (UnknownHostException e) {

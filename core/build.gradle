@@ -34,7 +34,7 @@ task remap(type: JavaExec) {
     inputs.file input
     inputs.file mappings
     outputs.file output
-    main = 'net.fabricmc.tinyremapper.Main'
+    main = 'cn.tesseract.union.TinyRemapper'
     classpath = project(":").sourceSets.main.runtimeClasspath
     args input, output, mappings.absolutePath, 'intermediary', 'named'
 
