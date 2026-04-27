@@ -1,5 +1,5 @@
 # BES
-Break Everything Server/n
+Break Everything Server 
 Adds:
 - Option to enable Hardcore Difficulty in config.json
 - Option to enable world reset if hardcore is enabled
