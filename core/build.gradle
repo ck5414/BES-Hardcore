@@ -34,7 +34,7 @@ task remap(type: JavaExec) {
     inputs.file input
     inputs.file mappings
     outputs.file output
-    main = 'cn.tesseract.union.TinyRemapper'
+    mainClass = 'cn.tesseract.union.TinyRemapper'
     classpath = project(":").sourceSets.main.runtimeClasspath
     args input, output, mappings.absolutePath, 'intermediary', 'named'
 
@@ -46,7 +46,7 @@ task preprocess(type: JavaExec) {
     def output = "$moddingDir/game-lib_preprocessed.jar"
     inputs.file input
     outputs.file output
-    main = 'cn.tesseract.union.Preprocessor'
+    mainClass = 'cn.tesseract.union.Preprocessor'
     classpath = project(":").sourceSets.main.runtimeClasspath
     args input, output, 'desktop'
 }
