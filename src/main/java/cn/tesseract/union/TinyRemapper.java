@@ -94,19 +94,24 @@ public class TinyRemapper {
      * Zw.a(String,Z) also gets mapped to getSaveLoader.
      */
     private void propagateMappings() {
+        // Only propagate method mappings upward through the class hierarchy.
+        // Method overriding requires that a renamed method keeps the same name in
+        // both the parent declaration and every child override, so propagation is
+        // correct and necessary for methods.
+        //
+        // Fields are NOT polymorphic: each class declares its own field slot and
+        // there is no overriding.  Propagating field renames upward causes the
+        // common ancestor to receive mappings from multiple unrelated subclass
+        // fields that happen to share the same obfuscated name (e.g. EntityArrow.q,
+        // EntityFireball.k, EntityFishHook.j all map to "ticksInAir"), which
+        // results in the ancestor class having several distinct fields all renamed
+        // to the same name and triggers a ClassFormatError: Duplicate field name.
         Map<String, String> methodExtras = new HashMap<>();
         for (Map.Entry<String, String> entry : methodMap.entrySet()) {
             String[] p = entry.getKey().split("\0", 3);
             propagateUp(p[0], p[1], p[2], entry.getValue(), methodMap, methodExtras);
         }
         methodMap.putAll(methodExtras);
-
-        Map<String, String> fieldExtras = new HashMap<>();
-        for (Map.Entry<String, String> entry : fieldMap.entrySet()) {
-            String[] p = entry.getKey().split("\0", 3);
-            propagateUp(p[0], p[1], p[2], entry.getValue(), fieldMap, fieldExtras);
-        }
-        fieldMap.putAll(fieldExtras);
     }
 
     private void propagateUp(String owner, String name, String desc, String mappedName,
