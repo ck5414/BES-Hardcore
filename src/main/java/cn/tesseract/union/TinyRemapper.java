@@ -42,6 +42,7 @@ public class TinyRemapper {
     // Hierarchy built from the game JAR (intermediary namespace)
     private final Map<String, String>       superMap     = new HashMap<>();
     private final Map<String, List<String>> interfaceMap = new HashMap<>();
+    private final Map<String, List<String>> childrenMap  = new HashMap<>();
 
     // -----------------------------------------------------------------------
     // Mappings loading
@@ -81,35 +82,52 @@ public class TinyRemapper {
         for (Map.Entry<String, byte[]> e : classes.entrySet()) {
             ClassReader cr = new ClassReader(e.getValue());
             String sup = cr.getSuperName();
-            if (sup != null) superMap.put(e.getKey(), sup);
+            if (sup != null) {
+                superMap.put(e.getKey(), sup);
+                childrenMap.computeIfAbsent(sup, k -> new ArrayList<>()).add(e.getKey());
+            }
             String[] ifaces = cr.getInterfaces();
-            if (ifaces != null && ifaces.length > 0)
+            if (ifaces != null && ifaces.length > 0) {
                 interfaceMap.put(e.getKey(), Arrays.asList(ifaces));
+                for (String iface : ifaces) {
+                    childrenMap.computeIfAbsent(iface, k -> new ArrayList<>()).add(e.getKey());
+                }
+            }
         }
     }
 
     /**
-     * Propagate method/field mappings upward through the inheritance chain.
-     * Example: if aaQ.a(String,Z)->getSaveLoader and aaQ implements Zw, then
+     * Propagate method mappings both upward and downward through the inheritance chain.
+     * Upward: if aaQ.a(String,Z)->getSaveLoader and aaQ implements Zw, then
      * Zw.a(String,Z) also gets mapped to getSaveLoader.
+     * Downward: if acf.d()->initIndependentStat and acg extends acf, then
+     * acg.d() also gets mapped to initIndependentStat (needed when bytecode
+     * calls the method via a subclass reference).
      */
     private void propagateMappings() {
-        // Only propagate method mappings upward through the class hierarchy.
-        // Method overriding requires that a renamed method keeps the same name in
-        // both the parent declaration and every child override, so propagation is
-        // correct and necessary for methods.
+        // Propagate method mappings both upward and downward through the class hierarchy.
         //
-        // Fields are NOT polymorphic: each class declares its own field slot and
-        // there is no overriding.  Propagating field renames upward causes the
-        // common ancestor to receive mappings from multiple unrelated subclass
-        // fields that happen to share the same obfuscated name (e.g. EntityArrow.q,
-        // EntityFireball.k, EntityFishHook.j all map to "ticksInAir"), which
-        // results in the ancestor class having several distinct fields all renamed
-        // to the same name and triggers a ClassFormatError: Duplicate field name.
+        // Upward propagation: if a subclass method is mapped, the parent declaration
+        // gets the same name (needed for interface/abstract-class declarations).
+        //
+        // Downward propagation: if a parent method is mapped, all subclasses that
+        // inherit it (without overriding) get the same mapping.  This is required
+        // when bytecode contains an invokevirtual/invokeinterface instruction whose
+        // static receiver type is the subclass but the method is only declared in the
+        // parent — without this, the remapper leaves the call site name unchanged
+        // while renaming the declaration, causing NoSuchMethodError at runtime.
+        //
+        // Fields are NOT polymorphic and are intentionally excluded: each class
+        // declares its own field slot with no overriding.  Propagating field renames
+        // can cause a common ancestor to receive mappings from multiple unrelated
+        // subclass fields that share the same obfuscated name (e.g. EntityArrow.q,
+        // EntityFireball.k, EntityFishHook.j all mapping to "ticksInAir"), which
+        // triggers ClassFormatError: Duplicate field name.
         Map<String, String> methodExtras = new HashMap<>();
         for (Map.Entry<String, String> entry : methodMap.entrySet()) {
             String[] p = entry.getKey().split("\0", 3);
             propagateUp(p[0], p[1], p[2], entry.getValue(), methodMap, methodExtras);
+            propagateDown(p[0], p[1], p[2], entry.getValue(), methodMap, methodExtras);
         }
         methodMap.putAll(methodExtras);
     }
@@ -131,6 +149,17 @@ public class TinyRemapper {
             if (!existing.containsKey(key) && !accumulator.containsKey(key)) {
                 accumulator.put(key, mappedName);
                 propagateUp(iface, name, desc, mappedName, existing, accumulator);
+            }
+        }
+    }
+
+    private void propagateDown(String owner, String name, String desc, String mappedName,
+                               Map<String, String> existing, Map<String, String> accumulator) {
+        for (String child : childrenMap.getOrDefault(owner, Collections.emptyList())) {
+            String key = child + "\0" + name + "\0" + desc;
+            if (!existing.containsKey(key) && !accumulator.containsKey(key)) {
+                accumulator.put(key, mappedName);
+                propagateDown(child, name, desc, mappedName, existing, accumulator);
             }
         }
     }
