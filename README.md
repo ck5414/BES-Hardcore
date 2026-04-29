@@ -70,7 +70,7 @@ chmod +x gradlew          # Linux/macOS only
 Output: `desktop/run/BES.jar`
 
 **Requirements:**
-- Java 17+
+- Java 25+
 - Internet access to Maven Central
 - `core/libs/1.6.4-MITE.jar` and `core/libs/mappings.tiny` present
 

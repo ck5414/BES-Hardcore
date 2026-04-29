@@ -4,7 +4,7 @@
 
 Prerequisites
 -------------
-  - Java JDK 17 or newer   (verify with: java -version)
+  - Java JDK 25 or newer   (verify with: java -version)
   - Internet access to Maven Central (repo1.maven.org)
   - The file  core/libs/1.6.4-MITE.jar   must be present  (the original game JAR)
   - The file  core/libs/mappings.tiny     must be present  (name mappings)
