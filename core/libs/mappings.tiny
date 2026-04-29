@@ -8330,6 +8330,10 @@ CLASS	net/minecraft/Om	net/minecraft/Om
 METHOD	net/minecraft/Om	()I	a	getRecipeSize
 METHOD	net/minecraft/Om	(Lnet/minecraft/Ka;Lnet/minecraft/agk;)Z	a	matches
 METHOD	net/minecraft/Om	()Lnet/minecraft/Nm;	b	getRecipeOutput
+CLASS	net/minecraft/Os	net/minecraft/RecipesRaincoatDyes
+METHOD	net/minecraft/Os	()I	a	getRecipeSize
+METHOD	net/minecraft/Os	(Lnet/minecraft/Ka;Lnet/minecraft/agk;)Z	a	matches
+METHOD	net/minecraft/Os	()Lnet/minecraft/Nm;	b	getRecipeOutput
 CLASS	net/minecraft/OM	net/minecraft/NBTTagString
 FIELD	net/minecraft/OM	Ljava/lang/String;	d	data
 METHOD	net/minecraft/OM	(Ljava/io/DataInput;I)V	a	load
