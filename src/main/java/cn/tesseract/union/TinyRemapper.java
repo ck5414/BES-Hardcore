@@ -117,12 +117,23 @@ public class TinyRemapper {
         // parent — without this, the remapper leaves the call site name unchanged
         // while renaming the declaration, causing NoSuchMethodError at runtime.
         //
-        // Fields are NOT polymorphic and are intentionally excluded: each class
-        // declares its own field slot with no overriding.  Propagating field renames
-        // can cause a common ancestor to receive mappings from multiple unrelated
-        // subclass fields that share the same obfuscated name (e.g. EntityArrow.q,
-        // EntityFireball.k, EntityFishHook.j all mapping to "ticksInAir"), which
-        // triggers ClassFormatError: Duplicate field name.
+        // Fields: only downward propagation is safe.
+        // Upward propagation would merge unrelated subclass fields that share the same
+        // obfuscated name (e.g. EntityArrow.q, EntityFireball.k, EntityFishHook.j all
+        // mapped to "ticksInAir") into a common ancestor, causing ClassFormatError:
+        // Duplicate field name.
+        //
+        // Downward propagation IS necessary: when bytecode contains a GETFIELD/PUTFIELD
+        // instruction whose owner is a subclass but the field is declared in the parent
+        // (e.g. net/minecraft/I.a:Z where the mapping entry is for net/minecraft/aW),
+        // the remapper must know that the child's reference should also be renamed.
+        Map<String, String> fieldExtras = new HashMap<>();
+        for (Map.Entry<String, String> entry : fieldMap.entrySet()) {
+            String[] p = entry.getKey().split("\0", 3);
+            propagateDown(p[0], p[1], p[2], entry.getValue(), fieldMap, fieldExtras);
+        }
+        fieldMap.putAll(fieldExtras);
+
         Map<String, String> methodExtras = new HashMap<>();
         for (Map.Entry<String, String> entry : methodMap.entrySet()) {
             String[] p = entry.getKey().split("\0", 3);
